@@ -36,10 +36,38 @@ src/
 
 ### API 规范
 
-- 遵循 RESTful 设计风格
-- 统一的响应格式
-- 标准的错误处理
-- 详细的接口文档
+#### 请求格式
+
+所有 API 请求需遵循以下规范：
+
+1. 基础路由
+- 所有 API 路由以 `/api/v1` 开头
+- 避免重复的路由前缀
+
+2. 查询参数
+- 分页参数使用 `current` 和 `size`
+- 排序参数使用 `order: 'asc' | 'desc'`
+- 过滤参数使用 `filters` 对象
+
+3. 响应格式
+```typescript
+interface ApiResponse<T> {
+  code: number;
+  message: string;
+  data: T;
+}
+
+interface PaginationResponse<T> extends ApiResponse<{
+  records: T[];
+  total: number;
+  current: number;
+  size: number;
+}> {}
+```
+
+4. 错误处理
+- 统一使用 `ApiError` 类处理错误
+- 错误码和消息定义在 `errors.ts` 中
 
 ### 代码规范
 

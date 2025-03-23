@@ -36,52 +36,52 @@
         row-key="id"
       >
         <!-- 数据源类型 -->
-        <template #type="{ text }">
-          <a-tag :color="getDatasourceTypeColor(text)">
-            {{ text.toUpperCase() }}
-          </a-tag>
-        </template>
+        <template #bodyCell="{ column, text, record }">
+          <template v-if="column.key === 'type'">
+            <a-tag :color="getDatasourceTypeColor(text)">
+              {{ text.toUpperCase() }}
+            </a-tag>
+          </template>
 
-        <!-- 连接状态 -->
-        <template #status="{ text }">
-          <a-badge
-            :status="text === 'connected' ? 'success' : text === 'error' ? 'error' : 'default'"
-            :text="getStatusText(text)"
-          />
-        </template>
+          <template v-if="column.key === 'status'">
+            <a-badge
+              :status="text === 'connected' ? 'success' : text === 'error' ? 'error' : 'default'"
+              :text="getStatusText(text)"
+            />
+          </template>
 
-        <!-- 操作列 -->
-        <template #action="{ record }">
-          <a-space>
-            <a-tooltip title="编辑">
-              <a-button type="link" @click="handleEdit(record)">
-                <template #icon><edit-outlined /></template>
-              </a-button>
-            </a-tooltip>
-            <a-tooltip title="测试连接">
-              <a-button
-                type="link"
-                :loading="record.id === testingId"
-                @click="handleTest(record)"
-              >
-                <template #icon><api-outlined /></template>
-              </a-button>
-            </a-tooltip>
-            <a-tooltip title="同步元数据">
-              <a-button
-                type="link"
-                :loading="record.id === syncingId"
-                @click="handleSync(record)"
-              >
-                <template #icon><sync-outlined /></template>
-              </a-button>
-            </a-tooltip>
-            <a-tooltip title="删除">
-              <a-button type="link" danger @click="handleDelete(record)">
-                <template #icon><delete-outlined /></template>
-              </a-button>
-            </a-tooltip>
-          </a-space>
+          <template v-if="column.key === 'action'">
+            <a-space>
+              <a-tooltip title="编辑">
+                <a-button type="link" @click="handleEdit(record)">
+                  <template #icon><edit-outlined /></template>
+                </a-button>
+              </a-tooltip>
+              <a-tooltip title="测试连接">
+                <a-button
+                  type="link"
+                  :loading="record.id === testingId"
+                  @click="handleTest(record)"
+                >
+                  <template #icon><api-outlined /></template>
+                </a-button>
+              </a-tooltip>
+              <a-tooltip title="同步元数据">
+                <a-button
+                  type="link"
+                  :loading="record.id === syncingId"
+                  @click="handleSync(record)"
+                >
+                  <template #icon><sync-outlined /></template>
+                </a-button>
+              </a-tooltip>
+              <a-tooltip title="删除">
+                <a-button type="link" danger @click="handleDelete(record)">
+                  <template #icon><delete-outlined /></template>
+                </a-button>
+              </a-tooltip>
+            </a-space>
+          </template>
         </template>
 
         <!-- 空状态 -->
@@ -166,7 +166,6 @@ const columns = [
     dataIndex: 'type',
     key: 'type',
     width: 120,
-    slots: { customRender: 'type' },
   },
   {
     title: '主机',
@@ -185,7 +184,6 @@ const columns = [
     dataIndex: 'status',
     key: 'status',
     width: 120,
-    slots: { customRender: 'status' },
   },
   {
     title: '描述',
@@ -198,7 +196,6 @@ const columns = [
     key: 'action',
     width: 180,
     fixed: 'right',
-    slots: { customRender: 'action' },
   },
 ];
 
@@ -208,7 +205,7 @@ const rowSelection = {
   selectedRowKeys: selectedRowKeys,
   onChange: (keys: string[]) => {
     selectedRowKeys.value = keys;
-    const selectedDatasource = datasourceStore.datasources.find(
+    const selectedDatasource = datasourceStore.dataSourceList.find(
       (item) => item.id === keys[0]
     );
     if (selectedDatasource) {
@@ -218,7 +215,7 @@ const rowSelection = {
 };
 
 // 计算属性：数据源列表
-const datasourceList = computed(() => datasourceStore.datasources);
+const datasourceList = computed(() => datasourceStore.dataSourceList);
 
 // 生命周期钩子
 onMounted(() => {
@@ -229,7 +226,7 @@ onMounted(() => {
 const loadDatasources = async () => {
   try {
     loading.value = true;
-    await datasourceStore.loadDatasources({
+    await datasourceStore.loadDataSources({
       page: pagination.value.current,
       pageSize: pagination.value.pageSize,
       search: searchText.value,
@@ -257,10 +254,12 @@ const handleSearch = () => {
 
 // 处理刷新
 const handleRefresh = () => {
+  searchText.value = '';
+  pagination.value.current = 1;
   loadDatasources();
 };
 
-// 处理新增
+// 处理添加
 const handleAdd = () => {
   editingDatasource.value = null;
   formVisible.value = true;
@@ -268,7 +267,7 @@ const handleAdd = () => {
 
 // 处理编辑
 const handleEdit = (record: any) => {
-  editingDatasource.value = record;
+  editingDatasource.value = { ...record };
   formVisible.value = true;
   emit('edit', record);
 };
@@ -303,18 +302,16 @@ const handleSync = async (record: any) => {
 const handleDelete = (record: any) => {
   Modal.confirm({
     title: '确认删除',
-    content: `确定要删除数据源 "${record.name}" 吗？`,
+    content: `确定要删除数据源"${record.name}"吗？`,
     okText: '确定',
     okType: 'danger',
     cancelText: '取消',
     async onOk() {
       try {
-        await datasourceStore.deleteDatasource(record.id);
-        message.success('数据源删除成功');
-        // 如果删除的是当前选中的数据源，清空选择
+        await datasourceStore.deleteDataSource(record.id);
+        message.success('删除成功');
         if (selectedRowKeys.value.includes(record.id)) {
           selectedRowKeys.value = [];
-          emit('select', null);
         }
         loadDatasources();
       } catch (err: any) {

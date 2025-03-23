@@ -1,5 +1,6 @@
 import { http } from '@/utils/http';
 import type { AxiosResponse } from 'axios';
+import type { ApiResponse } from '@/types/api';
 
 export interface QueryResult {
   columns: string[];
@@ -30,11 +31,14 @@ export interface QueryRequest {
  */
 export const executeQuery = async (request: QueryRequest): Promise<QueryResult> => {
   try {
-    const response: AxiosResponse<QueryResult> = await http.post('/api/v1/query/execute', request);
-    return response.data;
+    const response: AxiosResponse<ApiResponse<QueryResult>> = await http.post('query/execute', request);
+    if (!response.data.data) {
+      throw new Error('查询结果为空');
+    }
+    return response.data.data;
   } catch (error: any) {
     const queryError: QueryError = {
-      message: error.response?.data?.message || '查询执行失败',
+      message: error.response?.data?.message || error.message || '查询执行失败',
       code: error.response?.data?.code || 'UNKNOWN_ERROR',
       details: error.response?.data?.details,
     };
@@ -47,7 +51,7 @@ export const executeQuery = async (request: QueryRequest): Promise<QueryResult> 
  * @param queryId 查询ID
  */
 export const cancelQuery = async (queryId: string): Promise<void> => {
-  await http.post(`/api/v1/query/${queryId}/cancel`);
+  await http.post(`query/${queryId}/cancel`);
 };
 
 /**
@@ -57,7 +61,7 @@ export const cancelQuery = async (queryId: string): Promise<void> => {
  * @returns 查询历史列表
  */
 export const getQueryHistory = async (page: number = 1, pageSize: number = 10) => {
-  const response = await http.get('/api/v1/query/history', {
+  const response = await http.get('query/history', {
     params: { page, pageSize },
   });
   return response.data;
@@ -76,7 +80,7 @@ export const saveAsTemplate = async (
   description?: string,
   tags?: string[]
 ) => {
-  const response = await http.post('/api/v1/query/templates', {
+  const response = await http.post('query/templates', {
     name,
     sql,
     description,
@@ -89,6 +93,6 @@ export const saveAsTemplate = async (
  * 获取查询模板列表
  */
 export const getQueryTemplates = async () => {
-  const response = await http.get('/api/v1/query/templates');
+  const response = await http.get('query/templates');
   return response.data;
 };

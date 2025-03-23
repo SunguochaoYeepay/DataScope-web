@@ -1,24 +1,25 @@
 import request from '@/utils/request'
-import type { UserInfo } from '@/types/user'
+import type { LoginRequest, LoginResponse, UserInfo } from '@/types/auth'
 
-interface LoginRequest {
-  username: string
-  password: string
+/**
+ * 用户登录
+ * @param data 登录参数
+ * @returns 登录响应
+ */
+export function login(data: LoginRequest) {
+  return request.post<LoginResponse>('auth/login', data)
 }
 
-interface LoginResponse {
-  token: string
-  user: UserInfo
+/**
+ * 用户登出
+ */
+export function logout() {
+  return request.post<void>('auth/logout')
 }
 
-export async function login(data: LoginRequest): Promise<LoginResponse> {
-  return request.post('/api/v1/auth/login', data)
-}
-
-export async function logout(): Promise<void> {
-  return request.post('/api/v1/auth/logout')
-}
-
-export async function getUserInfo(): Promise<UserInfo> {
-  return request.get('/api/v1/auth/users/info')
+/**
+ * 获取用户信息
+ */
+export function getUserInfo() {
+  return request.get<UserInfo>('auth/users/info')
 } 

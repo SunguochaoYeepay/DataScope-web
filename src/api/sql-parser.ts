@@ -1,14 +1,22 @@
 import request from '@/utils/request';
-import type { SQLParseRequest, SQLParseResult, TableInfo } from '@/types/sql-parser';
+import type { SqlParseResult, TableInfo } from '@/types/sql-parser';
 
-export function parseSql(data: SQLParseRequest) {
-  return request.post<SQLParseResult>('/api/v1/sql-parsers/parse', data);
+const API_BASE = 'sql-parsers';
+
+/**
+ * 解析 SQL 语句
+ * @param sql SQL 语句
+ */
+export function parseSql(sql: string) {
+  return request.post<SqlParseResult>(`${API_BASE}/parse`, { sql });
 }
 
-export function getTables(dataSourceId: string) {
-  return request.get<TableInfo[]>(`/api/v1/sql-parsers/tables/${dataSourceId}`);
-}
-
-export function getTableInfo(dataSourceId: string, tableName: string) {
-  return request.get<TableInfo>(`/api/v1/sql-parsers/tables/${dataSourceId}/${tableName}`);
+/**
+ * 获取表信息
+ * @param datasourceId 数据源ID
+ * @param schema 数据库名
+ * @param table 表名
+ */
+export function getTableInfo(datasourceId: string, schema: string, table: string) {
+  return request.get<TableInfo>(`${API_BASE}/tables/${datasourceId}/${schema}/${table}`);
 }

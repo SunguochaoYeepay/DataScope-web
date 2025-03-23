@@ -8,6 +8,7 @@
 - 修复了 Table 组件使用已弃用的 `column.slots` 的问题，更新为使用 `v-slot:headerCell` 和 `v-slot:bodyCell`
 - 修复了 ProTable 组件的类型定义和插槽实现
 - 优化了全局样式和布局结构
+- 修复了数据源管理页面的布局问题，采用 Ant Design Vue 标准列表模板重构
 
 ### Changed
 - 更新了 Ant Design Vue 组件的使用方式，采用最新的 API
@@ -35,6 +36,11 @@
   - 使用 `current` 替代 `pageNum`
   - 使用 `size` 替代 `pageSize`
   - 规范化了排序参数 `order: 'asc' | 'desc'`
+- 优化了数据源管理页面的用户体验
+  - 改进了搜索区域布局
+  - 优化了表格展示效果
+  - 增强了操作区域的交互体验
+  - 添加了更多的视觉反馈
 
 ### Added
 - 新增了主题配置支持

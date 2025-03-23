@@ -4,6 +4,11 @@ import type { QueryResult, QueryError, QueryRequest } from '@/api/query';
 import { executeQuery, cancelQuery, getQueryHistory, saveAsTemplate, getQueryTemplates } from '@/api/query';
 import { message } from 'ant-design-vue';
 import { http } from '@/utils/http';
+import type { QueryTemplate } from '@/types/query';
+import request from '@/utils/request';
+import type { ApiResponse, PaginationResponse } from '@/types/api';
+
+const API_BASE = 'query/templates';
 
 export const useQueryStore = defineStore('query', () => {
   // 状态
@@ -14,7 +19,9 @@ export const useQueryStore = defineStore('query', () => {
   const selectedDatasource = ref<string>('');
   const queryHistory = ref<any[]>([]);
   const currentQueryId = ref<string>('');
-  const queryTemplates = ref<any[]>([]);
+  const templates = ref<QueryTemplate[]>([]);
+  const currentTemplate = ref<QueryTemplate | null>(null);
+  const fields = ref<Array<{ name: string; label: string }>>([]);
 
   // 计算属性
   const hasResult = computed(() => queryResult.value !== null);
@@ -97,7 +104,7 @@ export const useQueryStore = defineStore('query', () => {
   const loadQueryTemplates = async () => {
     try {
       const result = await getQueryTemplates();
-      queryTemplates.value = result;
+      templates.value = result;
     } catch (err: any) {
       message.error('获取查询模板失败: ' + err.message);
     }
@@ -124,36 +131,48 @@ export const useQueryStore = defineStore('query', () => {
     }
   };
 
-  const updateTemplate = async (
-    id: string,
-    name: string,
-    sql: string,
-    description?: string,
-    tags?: string[]
-  ) => {
-    try {
-      await http.put(`/api/v1/query/templates/${id}`, {
-        name,
-        sql,
-        description,
-        tags,
-      });
-      await loadQueryTemplates();
-      message.success('模板更新成功');
-    } catch (err: any) {
-      message.error('更新模板失败: ' + err.message);
-      throw err;
+  const getTemplates = async () => {
+    const { data } = await request.get<PaginationResponse<QueryTemplate>>(API_BASE);
+    templates.value = data.items;
+    return data.items;
+  };
+
+  const createTemplate = async (template: Omit<QueryTemplate, 'id' | 'createdAt' | 'updatedAt' | 'createdBy' | 'updatedBy'>) => {
+    const { data } = await request.post<QueryTemplate>(API_BASE, template);
+    templates.value.push(data);
+    return data;
+  };
+
+  const updateTemplate = async (id: string, template: Partial<QueryTemplate>) => {
+    const { data } = await request.put<QueryTemplate>(`${API_BASE}/${id}`, template);
+    const index = templates.value.findIndex((t: QueryTemplate) => t.id === id);
+    if (index !== -1) {
+      templates.value[index] = data;
     }
+    return data;
   };
 
   const deleteTemplate = async (id: string) => {
+    await request.delete<void>(`${API_BASE}/${id}`);
+    const index = templates.value.findIndex((t: QueryTemplate) => t.id === id);
+    if (index !== -1) {
+      templates.value.splice(index, 1);
+    }
+  };
+
+  const setCurrentTemplate = (template: QueryTemplate | null) => {
+    currentTemplate.value = template;
+  };
+
+  // 获取数据源字段列表
+  const getFields = async (datasourceId: string) => {
     try {
-      await http.delete(`/api/v1/query/templates/${id}`);
-      await loadQueryTemplates();
-      message.success('模板删除成功');
+      const { data } = await request.get<Array<{ name: string; label: string }>>(`/v1/datasource/${datasourceId}/fields`);
+      fields.value = data;
+      return data;
     } catch (err: any) {
-      message.error('删除模板失败: ' + err.message);
-      throw err;
+      message.error('获取字段列表失败: ' + err.message);
+      return [];
     }
   };
 
@@ -165,7 +184,9 @@ export const useQueryStore = defineStore('query', () => {
     error,
     selectedDatasource,
     queryHistory,
-    queryTemplates,
+    templates,
+    currentTemplate,
+    fields,
     
     // 计算属性
     hasResult,
@@ -181,7 +202,11 @@ export const useQueryStore = defineStore('query', () => {
     refreshQueryHistory,
     loadQueryTemplates,
     saveTemplate,
+    getTemplates,
+    createTemplate,
     updateTemplate,
     deleteTemplate,
+    setCurrentTemplate,
+    getFields,
   };
 });

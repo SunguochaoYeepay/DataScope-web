@@ -1,43 +1,41 @@
-import request from '@/utils/request';
-import type { QueryHistory, QueryHistoryQuery, QueryHistoryResponse, QueryStats } from '@/types/query-history';
+import request from '../utils/request';
+import type { QueryHistoryResponse, QueryParams } from '../types/query-history';
 
-export const listQueryHistories = async (params: QueryHistoryQuery) => {
-  // 转换参数
-  const { userId, ...restParams } = params;
-  const convertedParams: Record<string, any> = {
-    ...restParams,
-    pageNum: params.page,
-    pageSize: params.size
-  };
-  delete convertedParams.page;
-  delete convertedParams.size;
+/**
+ * 查询历史记录相关接口
+ */
 
-  const response = await request.get<QueryHistoryResponse>(`/api/v1/query-histories/user/${userId || 'test-user'}`, {
-    params: convertedParams
-  });
-
-  // 转换响应
-  const { records, total, pageNum, pageSize } = response.data.data;
-  return {
-    histories: records,
-    total,
-    page: pageNum,
-    size: pageSize
-  };
-};
-
-export function getQueryHistory(id: string) {
-  return request.get<QueryHistory>(`/api/v1/query-histories/${id}`);
+/**
+ * 获取用户的查询历史记录
+ * @param username - 用户名
+ * @param params - 查询参数
+ * @returns 查询历史记录列表
+ */
+export function getUserQueryHistories(username: string, params: QueryParams) {
+  return request.get<QueryHistoryResponse>(`query-histories/user/${username}`, params);
 }
 
-export function getQueryStats(dataSourceId?: string, startTime?: string, endTime?: string) {
-  return request.get<QueryStats>('/api/v1/query-histories/stats', {
-    params: { dataSourceId, startTime, endTime }
-  });
+/**
+ * 获取查询历史详情
+ * @param id - 查询历史ID
+ * @returns 查询历史详情
+ */
+export function getQueryHistoryDetail(id: string) {
+  return request.get<QueryHistoryResponse>(`query-histories/${id}`);
 }
 
-export function getSlowQueries(threshold: number, limit: number = 10) {
-  return request.get<QueryHistory[]>('/api/v1/query-histories/slow-queries', {
-    params: { threshold, limit }
-  });
+/**
+ * 删除查询历史记录
+ * @param id - 查询历史ID
+ */
+export function deleteQueryHistory(id: string) {
+  return request.delete<void>(`query-histories/${id}`);
+}
+
+/**
+ * 批量删除查询历史记录
+ * @param ids - 查询历史ID列表
+ */
+export function batchDeleteQueryHistories(ids: string[]) {
+  return request.delete<void>('query-histories', { ids });
 }

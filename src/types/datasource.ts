@@ -1,3 +1,67 @@
+import type { QueryParams } from './api';
+
+/**
+ * 数据源类型
+ */
+export enum DataSourceType {
+  MySQL = 'mysql',
+  PostgreSQL = 'postgresql',
+  Oracle = 'oracle',
+  SQLServer = 'sqlserver',
+}
+
+/**
+ * 数据源响应
+ */
+export interface DataSourceResponse {
+  id: string;
+  name: string;
+  type: DataSourceType;
+  host: string;
+  port: number;
+  database: string;
+  username: string;
+  password?: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/**
+ * 创建数据源请求
+ */
+export interface DataSourceCreateRequest {
+  name: string;
+  type: DataSourceType;
+  host: string;
+  port: number;
+  database: string;
+  username: string;
+  password: string;
+  description?: string;
+}
+
+/**
+ * 更新数据源请求
+ */
+export interface DataSourceUpdateRequest {
+  name?: string;
+  host?: string;
+  port?: number;
+  database?: string;
+  username?: string;
+  password?: string;
+  description?: string;
+}
+
+/**
+ * 数据源查询参数
+ */
+export interface DataSourceQueryParams extends QueryParams {
+  type?: DataSourceType;
+  keyword?: string;
+}
+
 /**
  * 数据源类型
  */
@@ -21,24 +85,6 @@ export interface CreateDataSourceParams {
 }
 
 /**
- * 数据源查询参数
- */
-export interface DataSourceQueryParams {
-  current?: number;
-  size?: number;
-  sort?: string;
-  order?: 'asc' | 'desc';
-  keyword?: string;
-  type?: string;
-  status?: string;
-}
-
-/**
- * 数据源类型
- */
-export type DatasourceType = 'mysql' | 'postgresql' | 'clickhouse';
-
-/**
  * 数据源状态
  */
 export type DatasourceStatus = 'connected' | 'error' | 'unknown';
@@ -49,7 +95,7 @@ export type DatasourceStatus = 'connected' | 'error' | 'unknown';
 export interface Datasource {
   id: string;
   name: string;
-  type: DatasourceType;
+  type: DataSourceType;
   description?: string;
   host: string;
   port: number;

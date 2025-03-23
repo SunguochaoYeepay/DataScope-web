@@ -11,8 +11,14 @@
     <a-list
       class="query-history-list"
       :loading="loading"
-      :data-source="queryStore.queryHistory"
-      :pagination="pagination"
+      :data-source="histories"
+      :pagination="{
+        total: total,
+        current: current,
+        pageSize: size,
+        onChange: handlePageChange,
+        onShowSizeChange: handleSizeChange
+      }"
     >
       <template #renderItem="{ item }">
         <a-list-item>
@@ -82,13 +88,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import { useQueryStore } from '@/stores/query';
 import { message } from 'ant-design-vue';
 import { ReloadOutlined, PlayCircleOutlined, CopyOutlined, SaveOutlined } from '@ant-design/icons-vue';
 import dayjs from 'dayjs';
 import relativeTime from 'dayjs/plugin/relativeTime';
 import 'dayjs/locale/zh-cn';
+import { getUserQueryHistories } from '../../api/query-history';
+import type { QueryHistory } from '../../types/query-history';
+import { QueryHistoryStatus } from '../../types/query-history';
 
 dayjs.extend(relativeTime);
 dayjs.locale('zh-cn');
@@ -97,6 +106,10 @@ const queryStore = useQueryStore();
 const loading = ref(false);
 const saveTemplateVisible = ref(false);
 const savingTemplate = ref(false);
+const histories = ref<QueryHistory[]>([]);
+const total = ref(0);
+const current = ref(1);
+const size = ref(10);
 
 // 分页配置
 const pagination = {
@@ -142,7 +155,15 @@ const formatDuration = (time: number) => {
 const refresh = async () => {
   loading.value = true;
   try {
-    await queryStore.refreshQueryHistory();
+    const response = await getUserQueryHistories('test-user', {
+      status: QueryHistoryStatus.SUCCESS,
+      current: current.value,
+      size: size.value
+    });
+    histories.value = response.records;
+    total.value = response.total;
+  } catch (error) {
+    console.error('Failed to fetch query histories:', error);
   } finally {
     loading.value = false;
   }
@@ -196,8 +217,20 @@ const handleSaveTemplate = async () => {
   }
 };
 
-// 组件挂载时加载历史记录
-refresh();
+const handlePageChange = (page: number) => {
+  current.value = page;
+  refresh();
+};
+
+const handleSizeChange = (pageSize: number) => {
+  size.value = pageSize;
+  current.value = 1;
+  refresh();
+};
+
+onMounted(() => {
+  refresh();
+});
 </script>
 
 <style lang="scss" scoped>

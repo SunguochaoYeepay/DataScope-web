@@ -1,6 +1,6 @@
 <template>
   <a-modal
-    :visible="visible"
+    :open="visible"
     :title="editingDatasource ? '编辑数据源' : '新建数据源'"
     width="600px"
     :maskClosable="false"
@@ -217,13 +217,10 @@ const handleSubmit = async () => {
     submitLoading.value = true;
 
     if (props.editingDatasource) {
-      await datasourceStore.updateDatasource({
-        ...formState,
-        id: props.editingDatasource.id,
-      });
+      await datasourceStore.updateDataSource(props.editingDatasource.id, formState);
       message.success('数据源更新成功');
     } else {
-      await datasourceStore.createDatasource(formState);
+      await datasourceStore.createDataSource(formState);
       message.success('数据源创建成功');
     }
 

@@ -11,12 +11,23 @@ import { sanitizeInput } from '../utils/security';
  * @description 定义了基础URL、超时时间和默认请求头
  */
 const DEFAULT_CONFIG: RequestConfig = {
-  baseURL: 'http://localhost:8080/api/v1',
+  baseURL: 'http://localhost:8080/api/v1',  // 基础URL已包含api/v1前缀
   timeout: 30000,
   headers: {
     'Content-Type': 'application/json',
   },
 };
+
+/**
+ * 规范化 URL，移除重复的 API 前缀
+ */
+function normalizeUrl(url: string): string {
+  // 移除开头的斜杠
+  url = url.replace(/^\/+/, '');
+  // 移除重复的 v1 前缀
+  url = url.replace(/^v1\//, '');
+  return url;
+}
 
 /**
  * HTTP请求工具类
@@ -62,6 +73,11 @@ class Request {
         }
         if (config.data) {
           config.data = sanitizeInput(config.data);
+        }
+
+        // 移除重复的 v1 前缀
+        if (config.url?.includes('/v1/')) {
+          config.url = config.url.replace('/v1/', '/');
         }
 
         return config;
@@ -224,7 +240,7 @@ class Request {
    * @throws {ApiError} 当响应格式不正确时抛出
    */
   public async get<T>(url: string, params?: QueryParams): Promise<T> {
-    const response = await this.instance.get<ApiResponse<T>>(url, { params });
+    const response = await this.instance.get<ApiResponse<T>>(normalizeUrl(url), { params });
     if (response.data.data === undefined) {
       throw new ApiError(ErrorCode.BAD_REQUEST, '响应数据格式错误');
     }
@@ -239,8 +255,7 @@ class Request {
    * @throws {ApiError} 当响应格式不正确时抛出
    */
   public async post<T>(url: string, data?: Record<string, unknown>): Promise<T> {
-    const response = await this.instance.post<ApiResponse<T>>(url, data);
-    // 201 Created 状态码已在响应拦截器中处理
+    const response = await this.instance.post<ApiResponse<T>>(normalizeUrl(url), data);
     if (response.data.data === undefined) {
       throw new ApiError(ErrorCode.BAD_REQUEST, '响应数据格式错误');
     }
@@ -255,8 +270,7 @@ class Request {
    * @throws {ApiError} 当响应格式不正确时抛出
    */
   public async put<T>(url: string, data?: Record<string, unknown>): Promise<T> {
-    const response = await this.instance.put<ApiResponse<T>>(url, data);
-    // 200 OK 状态码已在响应拦截器中处理
+    const response = await this.instance.put<ApiResponse<T>>(normalizeUrl(url), data);
     if (response.data.data === undefined) {
       throw new ApiError(ErrorCode.BAD_REQUEST, '响应数据格式错误');
     }
@@ -271,8 +285,7 @@ class Request {
    * @throws {ApiError} 当响应格式不正确时抛出
    */
   public async patch<T>(url: string, data?: Record<string, unknown>): Promise<T> {
-    const response = await this.instance.patch<ApiResponse<T>>(url, data);
-    // 200 OK 状态码已在响应拦截器中处理
+    const response = await this.instance.patch<ApiResponse<T>>(normalizeUrl(url), data);
     if (response.data.data === undefined) {
       throw new ApiError(ErrorCode.BAD_REQUEST, '响应数据格式错误');
     }
@@ -282,12 +295,12 @@ class Request {
   /**
    * 发送DELETE请求
    * @param url - 请求地址
+   * @param data - 请求体数据（可选）
    * @returns 返回Promise，resolve时返回T类型数据，reject时抛出ApiError
    * @throws {ApiError} 当响应格式不正确时抛出
    */
-  public async delete<T>(url: string): Promise<T> {
-    const response = await this.instance.delete<ApiResponse<T>>(url);
-    // 204 No Content 状态码已在响应拦截器中处理
+  public async delete<T>(url: string, data?: Record<string, unknown>): Promise<T> {
+    const response = await this.instance.delete<ApiResponse<T>>(normalizeUrl(url), { data });
     if (response.data.data === undefined && response.status !== 204) {
       throw new ApiError(ErrorCode.BAD_REQUEST, '响应数据格式错误');
     }
@@ -301,7 +314,7 @@ class Request {
    * @returns 返回Promise，resolve时返回DownloadResponse
    */
   public async download(url: string, params?: QueryParams): Promise<DownloadResponse> {
-    const response = await this.instance.get(url, {
+    const response = await this.instance.get(normalizeUrl(url), {
       params,
       responseType: 'blob',
       headers: {
@@ -314,7 +327,7 @@ class Request {
       : 'download';
     return {
       filename,
-      blob: new Blob([response.data]),
+      data: new Blob([response.data]),
     };
   }
 }

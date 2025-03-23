@@ -1,4 +1,4 @@
-import { Pagination, PaginationResult } from './common';
+<![CDATA[import { Pagination, PaginationResult } from './common';
 
 // 查询条件配置
 export interface QueryCondition {
@@ -36,8 +36,10 @@ export interface QuerySort {
 
 // 查询分页配置
 export interface QueryPagination {
-  enabled: boolean;
+  enabled?: boolean;
   pageSize: number;
+  defaultPageSize: number;
+  pageSizeOptions: string[];
 }
 
 // 查询配置
@@ -147,3 +149,58 @@ export interface QueryHistoryParams extends Pagination {
 export interface QueryHistoryResponse extends PaginationResult {
   list: QueryHistory[];
 }
+
+/**
+ * 查询模板
+ */
+export interface QueryTemplate {
+  id: string;
+  name: string;
+  description?: string;
+  sql: string;
+  datasourceId: string;
+  conditions?: Array<{
+    field: string;
+    label: string;
+    type: string;
+    required: boolean;
+    defaultValue?: string;
+    hidden: boolean;
+    order: number;
+  }>;
+  resultColumns?: Array<{
+    field: string;
+    label: string;
+    hidden: boolean;
+    order: number;
+  }>;
+  sorting?: Array<{
+    field: string;
+    direction: 'asc' | 'desc';
+    order: number;
+  }>;
+  pagination?: {
+    pageSize: number;
+    defaultPageSize: number;
+    pageSizeOptions: string[];
+  };
+  createdAt: string;
+  updatedAt: string;
+  createdBy: string;
+  updatedBy: string;
+  isPublic?: boolean;
+  tags?: string[];
+}
+
+/**
+ * 查询结果
+ */
+export interface QueryResult {
+  columns: string[];
+  rows: any[][];
+  total: number;
+  executionTime: number;
+  affectedRows?: number;
+  warnings?: string[];
+  errors?: string[];
+}]]>

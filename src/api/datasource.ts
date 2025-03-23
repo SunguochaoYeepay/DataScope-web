@@ -1,53 +1,60 @@
 import request from '@/utils/request';
-import type { DataSource, CreateDataSourceParams, DataSourceQueryParams } from '@/types/datasource'
-import type { PaginationResponse } from '@/types/api';
+import type { DataSourceResponse, DataSourceCreateRequest, DataSourceUpdateRequest } from '@/types/datasource';
 
-const API_BASE = '/api/v1/datasources'
+const API_BASE = 'datasources';
 
-// 获取数据源列表
-export async function getDatasources(params: DataSourceQueryParams): Promise<PaginationResponse<DataSource>> {
-  const searchParams = new URLSearchParams()
-  if (params.current) searchParams.append('current', params.current.toString())
-  if (params.size) searchParams.append('size', params.size.toString())
-  if (params.keyword) searchParams.append('keyword', params.keyword)
-  if (params.type) searchParams.append('type', params.type)
-  if (params.sort) searchParams.append('sort', params.sort)
-  if (params.order) searchParams.append('order', params.order)
-
-  return request.get(`${API_BASE}?${searchParams.toString()}`);
+/**
+ * 获取数据源列表
+ */
+export function getDataSourceList() {
+  return request.get<DataSourceResponse[]>(API_BASE);
 }
 
-// 创建数据源
-export async function createDatasource(data: CreateDataSourceParams): Promise<DataSource> {
-  return request.post(API_BASE, data);
+/**
+ * 获取数据源详情
+ * @param id 数据源ID
+ */
+export function getDataSourceDetail(id: string) {
+  return request.get<DataSourceResponse>(`${API_BASE}/${id}`);
 }
 
-// 获取单个数据源
-export async function getDatasource(id: string): Promise<DataSource> {
-  return request.get(`${API_BASE}/${id}`);
+/**
+ * 创建数据源
+ * @param data 数据源信息
+ */
+export function createDataSource(data: DataSourceCreateRequest) {
+  return request.post<DataSourceResponse>(API_BASE, data);
 }
 
-// 更新数据源（部分更新）
-export async function updateDatasource(id: string, data: Partial<DataSource>): Promise<DataSource> {
-  return request.patch(`${API_BASE}/${id}`, data);
+/**
+ * 更新数据源
+ * @param id 数据源ID
+ * @param data 数据源信息
+ */
+export function updateDataSource(id: string, data: DataSourceUpdateRequest) {
+  return request.put<DataSourceResponse>(`${API_BASE}/${id}`, data);
 }
 
-// 更新数据源（全量更新）
-export async function replaceDatasource(id: string, data: DataSource): Promise<DataSource> {
-  return request.put(`${API_BASE}/${id}`, data);
+/**
+ * 删除数据源
+ * @param id 数据源ID
+ */
+export function deleteDataSource(id: string) {
+  return request.delete<void>(`${API_BASE}/${id}`);
 }
 
-// 删除数据源
-export async function deleteDatasource(id: string): Promise<void> {
-  return request.delete(`${API_BASE}/${id}`);
+/**
+ * 测试数据源连接
+ * @param data 数据源信息
+ */
+export function testDataSourceConnection(data: DataSourceCreateRequest) {
+  return request.post<void>(`${API_BASE}/test`, data);
 }
 
-// 测试数据源连接
-export async function testDatasourceConnection(id: string): Promise<boolean> {
-  return request.post(`${API_BASE}/${id}/test`);
-}
-
-// 获取数据源详情
-export async function getDatasourceById(id: string): Promise<DataSource> {
-  return request.get(`${API_BASE}/${id}`);
+/**
+ * 同步数据源元数据
+ * @param id 数据源ID
+ */
+export function syncDataSourceMetadata(id: string) {
+  return request.post<void>(`${API_BASE}/${id}/sync`);
 }
