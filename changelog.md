@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 ### Fixed
+- 修复了 API 请求路径中重复出现 /v1 的问题
 - 修复了 Modal 组件使用已弃用的 `visible` 属性的问题，更新为使用 `open` 属性
 - 修复了 Table 组件使用已弃用的 `column.slots` 的问题，更新为使用 `v-slot:headerCell` 和 `v-slot:bodyCell`
 - 修复了 ProTable 组件的类型定义和插槽实现
@@ -25,6 +26,15 @@
   - 添加了详细的 JSDoc 注释
   - 完善了接口说明
   - 添加了复杂逻辑的流程说明
+- 规范化API请求工具类
+  - 修复了重复的API前缀问题
+  - 统一了查询参数格式
+  - 规范化了响应格式处理
+  - 完善了错误处理
+- 统一了查询参数
+  - 使用 `current` 替代 `pageNum`
+  - 使用 `size` 替代 `pageSize`
+  - 规范化了排序参数 `order: 'asc' | 'desc'`
 
 ### Added
 - 新增了主题配置支持
@@ -61,6 +71,9 @@
   - 添加了 HTML 转义函数
   - 添加了 SQL 转义函数
   - 添加了递归参数处理函数
+- 新增了 `normalizeUrl` 工具函数，用于处理API路由
+- 新增了统一的查询参数接口 `QueryParams`
+- 新增了标准的响应格式接口 `ApiResponse`
 
 ## [0.1.0] - 2024-03-XX
 - 初始版本发布
