@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DataScope API 测试工具</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <style>
+    body { padding: 20px; }
+    .response-container { 
+      max-height: 400px; 
+      overflow-y: auto; 
+      background-color: #f8f9fa;
+      padding: 15px;
+      border-radius: 5px;
+    }
+    pre { white-space: pre-wrap; }
+    .url-input { width: 100%; }
+    .method-select { width: 120px; }
+    .nav-tabs { margin-bottom: 20px; }
+    .tab-pane { padding-top: 10px; }
+  </style>
+</head>
+<body>
+  <div class="container-fluid">
+    <h1>DataScope API 测试工具</h1>
+    
+    <div class="row mt-4">
+      <div class="col-md-12">
+        <ul class="nav nav-tabs" id="apiTabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="datasource-tab" data-bs-toggle="tab" data-bs-target="#datasource" type="button" role="tab">数据源管理</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="metadata-tab" data-bs-toggle="tab" data-bs-target="#metadata" type="button" role="tab">元数据管理</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="query-tab" data-bs-toggle="tab" data-bs-target="#query" type="button" role="tab">查询管理</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="visualization-tab" data-bs-toggle="tab" data-bs-target="#visualization" type="button" role="tab">可视化管理</button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="custom-tab" data-bs-toggle="tab" data-bs-target="#custom" type="button" role="tab">自定义请求</button>
+          </li>
+        </ul>
+        
+        <div class="tab-content" id="apiTabContent">
+          <!-- 数据源管理模块 -->
+          <div class="tab-pane fade show active" id="datasource" role="tabpanel">
+            <div class="card mb-4">
+              <div class="card-header bg-light">
+                <h5>数据源管理 API</h5>
+              </div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <select class="form-select mb-3" id="datasourceEndpoint">
+                    <option value="/v1/datasources">获取数据源列表 (GET /v1/datasources)</option>
+                    <option value="/v1/datasources/{id}">获取数据源详情 (GET /v1/datasources/{id})</option>
+                    <option value="/v1/datasources">创建数据源 (POST /v1/datasources)</option>
+                    <option value="/v1/datasources/{id}">更新数据源 (PUT /v1/datasources/{id})</option>
+                    <option value="/v1/datasources/{id}">删除数据源 (DELETE /v1/datasources/{id})</option>
+                    <option value="/v1/datasources/test">测试数据源连接 (POST /v1/datasources/test)</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">参数</label>
+                  <div class="input-group mb-3" id="datasourceParams">
+                    <span class="input-group-text">ID</span>
+                    <input type="text" class="form-control" id="datasourceId" placeholder="输入数据源ID">
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">请求体 (JSON)</label>
+                  <textarea class="form-control" id="datasourceBody" rows="5" placeholder="{ }"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="sendDatasourceRequest()">发送请求</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header bg-light">
+                <h5>响应结果</h5>
+              </div>
+              <div class="card-body">
+                <div class="response-container">
+                  <pre id="datasourceResponse">// 响应将显示在此处</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 元数据管理模块 -->
+          <div class="tab-pane fade" id="metadata" role="tabpanel">
+            <div class="card mb-4">
+              <div class="card-header bg-light">
+                <h5>元数据管理 API</h5>
+              </div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <select class="form-select mb-3" id="metadataEndpoint">
+                    <option value="/v1/metadata/datasources/{datasourceId}/tables">获取表列表 (GET /metadata/datasources/{datasourceId}/tables)</option>
+                    <option value="/v1/metadata/datasources/{datasourceId}/tables/{schema}.{tableName}">获取表元数据 (GET /metadata/datasources/{datasourceId}/tables/{schema}.{tableName})</option>
+                    <option value="/v1/metadata/datasources/{datasourceId}/refresh">刷新数据源元数据 (POST /metadata/datasources/{datasourceId}/refresh)</option>
+                    <option value="/v1/metadata/datasources/{datasourceId}/tables/{schema}.{tableName}/refresh">刷新表元数据 (POST /metadata/datasources/{datasourceId}/tables/{schema}.{tableName}/refresh)</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">参数</label>
+                  <div class="input-group mb-3">
+                    <span class="input-group-text">数据源ID</span>
+                    <input type="text" class="form-control" id="metadataDatasourceId" placeholder="输入数据源ID">
+                  </div>
+                  <div class="input-group mb-3" id="metadataTableParams">
+                    <span class="input-group-text">模式</span>
+                    <input type="text" class="form-control" id="metadataSchema" placeholder="输入模式名">
+                    <span class="input-group-text">表名</span>
+                    <input type="text" class="form-control" id="metadataTableName" placeholder="输入表名">
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">请求体 (JSON)</label>
+                  <textarea class="form-control" id="metadataBody" rows="5" placeholder="{ }"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="sendMetadataRequest()">发送请求</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header bg-light">
+                <h5>响应结果</h5>
+              </div>
+              <div class="card-body">
+                <div class="response-container">
+                  <pre id="metadataResponse">// 响应将显示在此处</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 查询管理模块 -->
+          <div class="tab-pane fade" id="query" role="tabpanel">
+            <div class="card mb-4">
+              <div class="card-header bg-light">
+                <h5>查询管理 API</h5>
+              </div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <select class="form-select mb-3" id="queryEndpoint">
+                    <option value="/v1/queries">获取查询列表 (GET /queries)</option>
+                    <option value="/v1/queries/{id}">获取查询详情 (GET /queries/{id})</option>
+                    <option value="/v1/queries">创建查询 (POST /queries)</option>
+                    <option value="/v1/queries/{id}">更新查询 (PUT /queries/{id})</option>
+                    <option value="/v1/queries/{id}">删除查询 (DELETE /queries/{id})</option>
+                    <option value="/v1/queries/{id}/execute">执行查询 (POST /queries/{id}/execute)</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">参数</label>
+                  <div class="input-group mb-3" id="queryParams">
+                    <span class="input-group-text">查询ID</span>
+                    <input type="text" class="form-control" id="queryId" placeholder="输入查询ID">
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">请求体 (JSON)</label>
+                  <textarea class="form-control" id="queryBody" rows="5" placeholder="{ }"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="sendQueryRequest()">发送请求</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header bg-light">
+                <h5>响应结果</h5>
+              </div>
+              <div class="card-body">
+                <div class="response-container">
+                  <pre id="queryResponse">// 响应将显示在此处</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 可视化管理模块 -->
+          <div class="tab-pane fade" id="visualization" role="tabpanel">
+            <div class="card mb-4">
+              <div class="card-header bg-light">
+                <h5>可视化管理 API</h5>
+              </div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <select class="form-select mb-3" id="vizEndpoint">
+                    <option value="/v1/visualizations">获取可视化列表 (GET /visualizations)</option>
+                    <option value="/v1/visualizations/{id}">获取可视化详情 (GET /visualizations/{id})</option>
+                    <option value="/v1/visualizations">创建可视化 (POST /visualizations)</option>
+                    <option value="/v1/visualizations/{id}">更新可视化 (PUT /visualizations/{id})</option>
+                    <option value="/v1/visualizations/{id}">删除可视化 (DELETE /visualizations/{id})</option>
+                    <option value="/v1/visualizations/{id}/data">获取可视化数据 (GET /visualizations/{id}/data)</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">参数</label>
+                  <div class="input-group mb-3" id="vizParams">
+                    <span class="input-group-text">可视化ID</span>
+                    <input type="text" class="form-control" id="vizId" placeholder="输入可视化ID">
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">请求体 (JSON)</label>
+                  <textarea class="form-control" id="vizBody" rows="5" placeholder="{ }"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="sendVizRequest()">发送请求</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header bg-light">
+                <h5>响应结果</h5>
+              </div>
+              <div class="card-body">
+                <div class="response-container">
+                  <pre id="vizResponse">// 响应将显示在此处</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- 自定义请求 -->
+          <div class="tab-pane fade" id="custom" role="tabpanel">
+            <div class="card mb-4">
+              <div class="card-header bg-light">
+                <h5>自定义 API 请求</h5>
+              </div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <label class="form-label">请求URL</label>
+                  <div class="input-group mb-3">
+                    <span class="input-group-text" id="baseUrlDisplay">http://localhost:8082/api</span>
+                    <input type="text" class="form-control" id="customUrl" placeholder="/v1/your/endpoint">
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">请求方法</label>
+                  <select class="form-select" id="customMethod">
+                    <option value="GET">GET</option>
+                    <option value="POST">POST</option>
+                    <option value="PUT">PUT</option>
+                    <option value="DELETE">DELETE</option>
+                  </select>
+                </div>
+                <div class="mb-3">
+                  <label class="form-label">请求体 (JSON)</label>
+                  <textarea class="form-control" id="customBody" rows="5" placeholder="{ }"></textarea>
+                </div>
+                <button class="btn btn-primary" onclick="sendCustomRequest()">发送请求</button>
+              </div>
+            </div>
+            <div class="card">
+              <div class="card-header bg-light">
+                <h5>响应结果</h5>
+              </div>
+              <div class="card-body">
+                <div class="response-container">
+                  <pre id="customResponse">// 响应将显示在此处</pre>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // 基础URL
+    const baseUrl = 'http://localhost:8082/api';
+    
+    // 格式化JSON
+    function formatJSON(obj) {
+      return JSON.stringify(obj, null, 2);
+    }
+    
+    // 显示错误
+    function displayError(containerId, error) {
+      document.getElementById(containerId).textContent = `Error: ${error.message}`;
+      console.error(error);
+    }
+    
+    // 发送请求并处理响应
+    async function sendRequest(url, method, body, responseContainerId) {
+      try {
+        document.getElementById(responseContainerId).textContent = '正在发送请求...';
+        
+        const options = {
+          method: method,
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          credentials: 'include'
+        };
+        
+        if (method !== 'GET' && method !== 'DELETE' && body) {
+          options.body = body;
+        }
+        
+        console.log(`Sending ${method} request to: ${url}`);
+        console.log('Request options:', options);
+        
+        const response = await fetch(url, options);
+        const contentType = response.headers.get('content-type');
+        let data;
+        
+        if (contentType && contentType.includes('application/json')) {
+          data = await response.json();
+        } else {
+          data = await response.text();
+        }
+        
+        const statusInfo = `Status: ${response.status} ${response.statusText}\n\n`;
+        const responseText = typeof data === 'string' ? data : formatJSON(data);
+        
+        document.getElementById(responseContainerId).textContent = statusInfo + responseText;
+      } catch (error) {
+        displayError(responseContainerId, error);
+      }
+    }
+    
+    // 数据源管理模块请求
+    async function sendDatasourceRequest() {
+      let endpoint = document.getElementById('datasourceEndpoint').value;
+      const id = document.getElementById('datasourceId').value;
+      let method = 'GET';
+      
+      if (endpoint.includes('{id}')) {
+        if (!id) {
+          alert('请输入数据源ID');
+          return;
+        }
+        endpoint = endpoint.replace('{id}', id);
+      }
+      
+      if (endpoint.endsWith('test')) {
+        method = 'POST';
+      } else if (endpoint === '/v1/datasources' && document.getElementById('datasourceBody').value.trim()) {
+        method = 'POST';
+      } else if (endpoint.includes(id) && document.getElementById('datasourceBody').value.trim()) {
+        method = 'PUT';
+      } else if (endpoint.includes(id) && document.getElementById('datasourceEndpoint').value.includes('DELETE')) {
+        method = 'DELETE';
+      }
+      
+      const body = document.getElementById('datasourceBody').value.trim() ? 
+                  document.getElementById('datasourceBody').value : null;
+      
+      await sendRequest(`${baseUrl}${endpoint}`, method, body, 'datasourceResponse');
+    }
+    
+    // 元数据管理模块请求
+    async function sendMetadataRequest() {
+      let endpoint = document.getElementById('metadataEndpoint').value;
+      const datasourceId = document.getElementById('metadataDatasourceId').value;
+      const schema = document.getElementById('metadataSchema').value;
+      const tableName = document.getElementById('metadataTableName').value;
+      let method = 'GET';
+      
+      if (!datasourceId) {
+        alert('请输入数据源ID');
+        return;
+      }
+      
+      endpoint = endpoint.replace('{datasourceId}', datasourceId);
+      
+      if (endpoint.includes('{schema}.{tableName}')) {
+        if (!schema || !tableName) {
+          alert('请输入模式和表名');
+          return;
+        }
+        endpoint = endpoint.replace('{schema}.{tableName}', `${schema}.${tableName}`);
+      }
+      
+      if (endpoint.includes('refresh')) {
+        method = 'POST';
+      }
+      
+      const body = document.getElementById('metadataBody').value.trim() ? 
+                  document.getElementById('metadataBody').value : null;
+      
+      await sendRequest(`${baseUrl}${endpoint}`, method, body, 'metadataResponse');
+    }
+    
+    // 查询管理模块请求
+    async function sendQueryRequest() {
+      let endpoint = document.getElementById('queryEndpoint').value;
+      const id = document.getElementById('queryId').value;
+      let method = 'GET';
+      
+      if (endpoint.includes('{id}')) {
+        if (!id) {
+          alert('请输入查询ID');
+          return;
+        }
+        endpoint = endpoint.replace('{id}', id);
+      }
+      
+      if (endpoint === '/v1/queries' && document.getElementById('queryBody').value.trim()) {
+        method = 'POST';
+      } else if (endpoint.includes(id) && !endpoint.includes('execute') && document.getElementById('queryBody').value.trim()) {
+        method = 'PUT';
+      } else if (endpoint.includes(id) && document.getElementById('queryEndpoint').value.includes('DELETE')) {
+        method = 'DELETE';
+      } else if (endpoint.includes('execute')) {
+        method = 'POST';
+      }
+      
+      const body = document.getElementById('queryBody').value.trim() ? 
+                  document.getElementById('queryBody').value : null;
+      
+      await sendRequest(`${baseUrl}${endpoint}`, method, body, 'queryResponse');
+    }
+    
+    // 可视化管理模块请求
+    async function sendVizRequest() {
+      let endpoint = document.getElementById('vizEndpoint').value;
+      const id = document.getElementById('vizId').value;
+      let method = 'GET';
+      
+      if (endpoint.includes('{id}')) {
+        if (!id) {
+          alert('请输入可视化ID');
+          return;
+        }
+        endpoint = endpoint.replace('{id}', id);
+      }
+      
+      if (endpoint === '/v1/visualizations' && document.getElementById('vizBody').value.trim()) {
+        method = 'POST';
+      } else if (endpoint.includes(id) && !endpoint.includes('data') && document.getElementById('vizBody').value.trim()) {
+        method = 'PUT';
+      } else if (endpoint.includes(id) && document.getElementById('vizEndpoint').value.includes('DELETE')) {
+        method = 'DELETE';
+      }
+      
+      const body = document.getElementById('vizBody').value.trim() ? 
+                  document.getElementById('vizBody').value : null;
+      
+      await sendRequest(`${baseUrl}${endpoint}`, method, body, 'vizResponse');
+    }
+    
+    // 自定义请求
+    async function sendCustomRequest() {
+      const url = document.getElementById('customUrl').value;
+      const method = document.getElementById('customMethod').value;
+      const body = document.getElementById('customBody').value.trim() ? 
+                  document.getElementById('customBody').value : null;
+      
+      if (!url) {
+        alert('请输入URL');
+        return;
+      }
+      
+      await sendRequest(`${baseUrl}${url}`, method, body, 'customResponse');
+    }
+    
+    // 初始化事件监听
+    document.addEventListener('DOMContentLoaded', function() {
+      // 切换端点时更新UI
+      document.getElementById('datasourceEndpoint').addEventListener('change', function() {
+        const endpoint = this.value;
+        if (endpoint.includes('{id}') || endpoint.includes('DELETE')) {
+          document.getElementById('datasourceParams').style.display = 'flex';
+        } else {
+          document.getElementById('datasourceParams').style.display = 'none';
+        }
+      });
+      
+      document.getElementById('metadataEndpoint').addEventListener('change', function() {
+        const endpoint = this.value;
+        if (endpoint.includes('{schema}.{tableName}')) {
+          document.getElementById('metadataTableParams').style.display = 'flex';
+        } else {
+          document.getElementById('metadataTableParams').style.display = 'none';
+        }
+      });
+      
+      document.getElementById('queryEndpoint').addEventListener('change', function() {
+        const endpoint = this.value;
+        if (endpoint.includes('{id}')) {
+          document.getElementById('queryParams').style.display = 'flex';
+        } else {
+          document.getElementById('queryParams').style.display = 'none';
+        }
+      });
+      
+      document.getElementById('vizEndpoint').addEventListener('change', function() {
+        const endpoint = this.value;
+        if (endpoint.includes('{id}')) {
+          document.getElementById('vizParams').style.display = 'flex';
+        } else {
+          document.getElementById('vizParams').style.display = 'none';
+        }
+      });
+      
+      // 显示base URL
+      document.getElementById('baseUrlDisplay').textContent = baseUrl;
+    });
+  </script>
+</body>
+</html>
